@@ -18,7 +18,7 @@ func createS3Client(region string) *s3.S3 {
 }
 
 // ObjsUingCopy - Restores objects by copying previous versions of the objects.
-func ObjsUingCopy(bucket string, prefix string, region string, dstBucket string, dstPrefix string, dryrun bool) {
+func ObjsUingCopy(bucket string, prefix string, region string, dstBucket string, dstPrefix string, noDryrun bool) {
 	log.Infof("Restoring objects by copying previous versions of the objects.")
 
 	svc := createS3Client(region)
@@ -34,19 +34,19 @@ func ObjsUingCopy(bucket string, prefix string, region string, dstBucket string,
 	}
 
 	for _, obj := range objs {
-		copyVersionedObj(svc, bucket, *obj.Key, *obj.VersionId, dstBucket, dstPrefix, dryrun)
+		copyVersionedObj(svc, bucket, *obj.Key, *obj.VersionId, dstBucket, dstPrefix, noDryrun)
 	}
 }
 
 // ObjsUsingDel - Restores objects by removing the DELETE markers.
-func ObjsUsingDel(bucket string, prefix string, region string, dryrun bool) {
+func ObjsUsingDel(bucket string, prefix string, region string, noDryrun bool) {
 	log.Infof("Restoring objects by removing DELETE markers.")
 
 	svc := createS3Client(region)
 	_, objs := getObjectVersions(svc, bucket, prefix)
 
 	for _, obj := range *objs {
-		deleteVersionedObj(svc, bucket, *obj.Key, *obj.VersionId, dryrun)
+		deleteVersionedObj(svc, bucket, *obj.Key, *obj.VersionId, noDryrun)
 	}
 }
 
@@ -93,7 +93,7 @@ func getObjectVersions(svc *s3.S3, bucket string, prefix string) (*[]s3.ObjectVe
 	return &vers, &dels
 }
 
-func copyVersionedObj(svc *s3.S3, srcBucket string, key string, vid string, dstBucket string, dstPrefix string, dryrun bool) {
+func copyVersionedObj(svc *s3.S3, srcBucket string, key string, vid string, dstBucket string, dstPrefix string, noDryrun bool) {
 	if len(dstBucket) == 0 {
 		dstBucket = srcBucket
 	}
@@ -108,7 +108,7 @@ func copyVersionedObj(svc *s3.S3, srcBucket string, key string, vid string, dstB
 		"dst_obj": fmt.Sprintf("%s/%s", dstBucket, key),
 	}).Infof("Attempting to copy object.")
 
-	if !dryrun {
+	if noDryrun {
 		params := s3.CopyObjectInput{}
 		params.SetCopySource(copySource)
 		params.SetBucket(dstBucket)
@@ -121,10 +121,10 @@ func copyVersionedObj(svc *s3.S3, srcBucket string, key string, vid string, dstB
 	}
 }
 
-func deleteVersionedObj(svc *s3.S3, bucket string, key string, vid string, dryrun bool) {
+func deleteVersionedObj(svc *s3.S3, bucket string, key string, vid string, noDryrun bool) {
 	log.WithFields(log.Fields{"key": key, "version_id": vid}).Infof("Attempting to remove delete marker of the object")
 
-	if !dryrun {
+	if noDryrun {
 		params := s3.DeleteObjectInput{}
 		params.SetBucket(bucket)
 		params.SetKey(key)

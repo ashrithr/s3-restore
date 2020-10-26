@@ -2,6 +2,10 @@
 
 A tiny utility to restore deleted objects from a S3 version enabled bucket.
 
+TODO: Add s3 delete versioned objects
+TODO: Add s3 reporting capability https://github.com/whitfin/s3-utils
+TODO: Add --no-dry-run flag
+
 ## Background
 
 When an object is deleted from a version-enabled bucket, S3 creates a delete marker for the object.
